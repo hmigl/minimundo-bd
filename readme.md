@@ -9,7 +9,6 @@ Este projeto simula um sistema de gerenciamento de eventos com múltiplas entida
 - `initdb/init.sql`: Criação de tabelas, tipos e constraints.
 - `initdb/populate_data.sql`: População automatizada com dados sintéticos aleatórios.
 - `docker-compose.yml`: Define o serviço do banco de dados PostgreSQL.
-- 
 
 ## Modelagem
 
@@ -50,11 +49,22 @@ O banco de dados estará rodando com as seguintes informações:
 > 
 > - **Senha**: `postgres_pass`
 
-
-
 Ferramentas sugeridas: DBeaver, DataGrip.
-
 
 ## Limitações
 
-> 
+- A geração de dados sintéticos depende de funções aleatórias e, ocasionalmente, pode violar restrições (FK, UK, CK) durante o `populate_data.sql`.
+- Se isso ocorrer, o container irá falhar na inicialização e **não criará todas as tabelas** corretamente.
+- **Workaround:**
+  1. Pare e remova volume para limpar o banco atual:
+
+     ```bash
+     docker-compose down --volumes
+     ```
+  2. Refaça o build e suba de novo:
+
+     ```bash
+     docker-compose up --build
+     ```
+  3. Repita este processo até que o log mostre “database system is ready to accept connections”.
+- Futuramente, pode-se automatizar essa lógica com um entrypoint customizado que repete o `populate_data.sql` até o sucesso.
