@@ -31,7 +31,7 @@ Este projeto simula um sistema de gerenciamento de eventos com múltiplas entida
 2. Execute e aguarde até a inicialização do projeto
    
    ```bash
-   docker-compose down --volumes
+   docker-compose down --rmi all --volumes
    docker-compose up --build
    ```
 
@@ -59,7 +59,7 @@ Ferramentas sugeridas: DBeaver, DataGrip.
   1. Pare e remova volume para limpar o banco atual:
 
      ```bash
-     docker-compose down --volumes
+     docker-compose down --rmi all --volumes > out
      ```
   2. Refaça o build e suba de novo:
 

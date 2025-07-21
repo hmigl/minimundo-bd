@@ -1,15 +1,23 @@
 services:
   db:
-    image: postgres:14
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: postgres_db
     environment:
       POSTGRES_USER: postgres_user
       POSTGRES_PASSWORD: postgres_pass
       POSTGRES_DB: eventdb
+      POSTGRES_SHARED_PRELOAD_LIBRARIES: pgaudit
+      PGPAUDIT_LOG: 'all'
+      PGPAUDIT_LOG_CATALOG: 'off'
+      PGPAUDIT_ROLE: 'public'
     ports:
       - "5432:5432"
     volumes:
       - ./initdb:/docker-entrypoint-initdb.d:ro
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     networks:
       - pg-network
 
