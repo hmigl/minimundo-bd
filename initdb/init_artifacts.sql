@@ -86,27 +86,23 @@ BEGIN
         RAISE EXCEPTION 'A capacidade da sala para a atividade % foi excedida.', p_id_atividade;
     END IF;
 
-    START TRANSACTION;
-        -- Comando INSERT 1: Realiza a inscrição do participante na atividade
-        INSERT INTO TB_INSCRICAO (ID_PARTICIPANTE, ID_ATIVIDADE, DT_INSCRICAO)
-        VALUES (p_id_participante, p_id_atividade, CURRENT_DATE)
-        RETURNING ID_INSCRICAO INTO v_id_inscricao;
-        -- Comando INSERT 2: Registra o feedback do participante para a atividade
-        INSERT INTO TB_FEEDBACK (ID_INSCRICAO, NR_NOTA, DS_COMENTARIO, DT_FEEDBACK)
-        VALUES (v_id_inscricao, p_nota_feedback, p_comentario_feedback, CURRENT_DATE);
-    COMMIT;
+    -- Comando INSERT 1: Realiza a inscrição do participante na atividade
+    INSERT INTO TB_INSCRICAO (ID_PARTICIPANTE, ID_ATIVIDADE, DT_INSCRICAO)
+    VALUES (p_id_participante, p_id_atividade, CURRENT_DATE)
+    RETURNING ID_INSCRICAO INTO v_id_inscricao;
+    -- Comando INSERT 2: Registra o feedback do participante para a atividade
+    INSERT INTO TB_FEEDBACK (ID_INSCRICAO, NR_NOTA, DS_COMENTARIO, DT_FEEDBACK)
+    VALUES (v_id_inscricao, p_nota_feedback, p_comentario_feedback, CURRENT_DATE);
 
-    START TRANSACTION;
-        -- Comando UPDATE 1: Atualiza o histórico de participação
-        UPDATE TH_HISTORICO_PARTICIPACAO
-        SET DT_CONCLUSAO = (SELECT DT_FIM FROM TB_ATIVIDADE WHERE ID_ATIVIDADE = p_id_atividade)
-        WHERE ID_PARTICIPANTE = p_id_participante AND ID_ATIVIDADE = p_id_atividade;
-        -- Comando UPDATE 2: Atualiza os dados de contato do participante
-        SELECT DS_EMAIL INTO v_email_participante FROM TB_PARTICIPANTE WHERE ID_PARTICIPANTE = p_id_participante;
-        UPDATE TB_PARTICIPANTE
-        SET DS_EMAIL = v_email_participante
-        WHERE ID_PARTICIPANTE = p_id_participante;
-    COMMIT;
+    -- Comando UPDATE 1: Atualiza o histórico de participação
+    UPDATE TH_HISTORICO_PARTICIPACAO
+    SET DT_CONCLUSAO = (SELECT DT_FIM FROM TB_ATIVIDADE WHERE ID_ATIVIDADE = p_id_atividade)
+    WHERE ID_PARTICIPANTE = p_id_participante AND ID_ATIVIDADE = p_id_atividade;
+    -- Comando UPDATE 2: Atualiza os dados de contato do participante
+    SELECT DS_EMAIL INTO v_email_participante FROM TB_PARTICIPANTE WHERE ID_PARTICIPANTE = p_id_participante;
+    UPDATE TB_PARTICIPANTE
+    SET DS_EMAIL = v_email_participante
+    WHERE ID_PARTICIPANTE = p_id_participante;
 END;
 $$;
 
@@ -320,3 +316,22 @@ JOIN TB_EVENTO e ON a.ID_EVENTO = e.ID_EVENTO
 LEFT JOIN TB_PATROCINIO pat ON e.ID_EVENTO = pat.ID_EVENTO
 LEFT JOIN TB_PARCEIRO p ON pat.ID_PARCEIRO = p.ID_PARCEIRO
 GROUP BY e.ID_EVENTO, e.NM_EVENTO, p.ID_PARCEIRO, p.NM_PARCEIRO;
+
+
+DO $$
+DECLARE
+  rec RECORD;
+BEGIN
+  FOR rec IN
+    SELECT schemaname, matviewname
+      FROM pg_matviews
+     WHERE schemaname = 'public'
+  LOOP
+    EXECUTE FORMAT(
+      'GRANT SELECT ON %I.%I TO ROLE_DBA',
+      rec.schemaname,
+      rec.matviewname
+    );
+  END LOOP;
+END
+$$;
